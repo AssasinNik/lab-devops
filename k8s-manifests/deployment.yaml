@@ -19,9 +19,8 @@ spec:
     spec:
       containers:
       - name: django-app
-        # Имя образа должно совпадать с тем, что собирает GitHub Actions
-        image: ghcr.io/AssasinNik/django-kubernetes-app:latest
-        imagePullPolicy: Always # Чтобы подтягивал новый образ после обновления
+        image: django-kubernetes-app:latest
+        imagePullPolicy: Never # Используем локальный образ в minikube
         ports:
         - containerPort: 8000
         envFrom:
