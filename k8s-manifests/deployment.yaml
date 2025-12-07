@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-deployment
+  namespace: django-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: django-app
+  template:
+    metadata:
+      labels:
+        app: django-app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: django-app
+        # Имя образа должно совпадать с тем, что собирает GitHub Actions
+        image: ghcr.io/AssasinNik/django-kubernetes-app:latest
+        imagePullPolicy: Always # Чтобы подтягивал новый образ после обновления
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: django-config
+        - secretRef:
+            name: django-secrets
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

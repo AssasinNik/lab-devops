@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Коллекция комиксов</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Neue', cursive;
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            text-shadow: 4px 4px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            font-family: 'Bangers', cursive;
+            font-size: 4.5em;
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+            transform: rotate(-2deg);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: rotate(-2deg) translateY(0); }
+            50% { transform: rotate(-2deg) translateY(-10px); }
+        }
+
+        .header p {
+            font-size: 1.4em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.2), 12px 12px 0px rgba(0,0,0,0.1);
+            text-align: center;
+            border: 4px solid #000;
+            transform: rotate(-1deg);
+            transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:nth-child(even) {
+            transform: rotate(1deg);
+        }
+
+        .stat-card:hover {
+            transform: rotate(0deg) scale(1.05);
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.3), 15px 15px 0px rgba(0,0,0,0.15);
+        }
+
+        .stat-card::before {
+            content: '💥';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 3em;
+            opacity: 0.3;
+        }
+
+        .stat-card h3 {
+            font-family: 'Bangers', cursive;
+            color: #ff6b6b;
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+            letter-spacing: 2px;
+        }
+
+        .stat-card p {
+            color: #333;
+            font-size: 1.1em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comics-list {
+            display: grid;
+            gap: 30px;
+        }
+
+        .comic-card {
+            background: white;
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.2), 15px 15px 0px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 5px solid #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .comic-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #ff6b6b);
+            background-size: 200% 100%;
+            animation: gradient 3s linear infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .comic-card:hover {
+            transform: translateY(-8px) rotate(1deg);
+            box-shadow: 15px 15px 0px rgba(0,0,0,0.3), 20px 20px 0px rgba(0,0,0,0.15);
+        }
+
+        .comic-card.reading {
+            border-color: #ff6b6b;
+        }
+
+        .comic-card.completed {
+            border-color: #4ecdc4;
+        }
+
+        .comic-card.wishlist {
+            border-color: #ffd93d;
+        }
+
+        .comic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .comic-title {
+            font-family: 'Bangers', cursive;
+            font-size: 2.2em;
+            color: #333;
+            letter-spacing: 1px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .comic-status {
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 1em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 3px solid #000;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+        }
+
+        .comic-status.reading {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .comic-status.completed {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .comic-status.wishlist {
+            background: #ffd93d;
+            color: #333;
+        }
+
+        .comic-author {
+            font-size: 1.3em;
+            color: #666;
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .comic-author::before {
+            content: '✍️ ';
+        }
+
+        .comic-description {
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .comic-meta {
+            display: flex;
+            gap: 25px;
+            font-size: 0.95em;
+            color: #888;
+            flex-wrap: wrap;
+            padding-top: 15px;
+            border-top: 2px dashed #ddd;
+        }
+
+        .comic-meta span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .comic-meta span::before {
+            content: '📌';
+            font-size: 1.2em;
+        }
+
+        .no-comics {
+            text-align: center;
+            padding: 80px 20px;
+            background: white;
+            border-radius: 25px;
+            color: #999;
+            border: 5px solid #000;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.2);
+        }
+
+        .no-comics h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+            letter-spacing: 2px;
+        }
+
+        .no-comics p {
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .comic-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #ff6b6b;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+            border: 3px solid #000;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+            transform: rotate(15deg);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 3em;
+            }
+            
+            .comic-header {
+                flex-direction: column;
+            }
+            
+            .comic-title {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💥 КОЛЛЕКЦИЯ КОМИКСОВ 💥</h1>
+            <p>Твоя библиотека графических историй</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="total-comics">{{ total_comics }}</h3>
+                <p>Всего комиксов</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="reading-comics">{{ reading_count }}</h3>
+                <p>Читаю сейчас</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="completed-comics">{{ completed_count }}</h3>
+                <p>Прочитано</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="wishlist-comics">{{ wishlist_count }}</h3>
+                <p>Хочу прочитать</p>
+            </div>
+        </div>
+
+        <div class="comics-list" id="comicsList">
+            {% if comics %}
+                {% for comic in comics %}
+                <div class="comic-card {{ comic.status }}">
+                    <div class="comic-badge">#{{ comic.id }}</div>
+                    <div class="comic-header">
+                        <div class="comic-title">{{ comic.title }}</div>
+                        <div class="comic-status {{ comic.status }}">
+                            {% if comic.status == 'reading' %}📖 Читаю
+                            {% elif comic.status == 'completed' %}✅ Прочитано
+                            {% elif comic.status == 'wishlist' %}⭐ Хочу прочитать
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if comic.author %}
+                    <div class="comic-author">{{ comic.author }}</div>
+                    {% endif %}
+                    <div class="comic-description">{{ comic.description|default:"Описание отсутствует" }}</div>
+                    <div class="comic-meta">
+                        <span>ID: {{ comic.id }}</span>
+                        <span>Добавлен: {{ comic.created_at|date:"d.m.Y H:i" }}</span>
+                        <span>Обновлён: {{ comic.updated_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-comics">
+                    <h3>Комиксов пока нет!</h3>
+                    <p>Добавь комиксы через API для их отображения здесь.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+
