@@ -1,0 +1,68 @@
+name: Deploy Django App
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  # Приводим имя репозитория к нижнему регистру автоматически нельзя в env, сделаем в шагах
+  K8S_NAMESPACE: django-app
+
+jobs:
+  build-and-deploy:
+    # ВАЖНО: используем ваш self-hosted runner
+    runs-on: self-hosted 
+    
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase repo name
+        run: |
+          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          # Важно для совместимости, если раннер на маке, а кластер где-то еще, но у нас все локально
+          platforms: linux/arm64 
+
+      - name: Deploy to Minikube
+        run: |
+          # Этот шаг сработает, только если раннер запущен локально и видит minikube
+          kubectl config use-context minikube
+          
+          # Создаем namespace если нет
+          kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Секреты (См. пояснение ниже - т.к. это CI, секрет должен уже быть или создаваться тут)
+          # В лабе предполагается ручное создание, поэтому пропустим создание секрета в CI
+          
+          # Применяем манифесты
+          kubectl apply -f k8s-manifests/namespace.yaml
+          kubectl apply -f k8s-manifests/configmap.yaml
+          kubectl apply -f k8s-manifests/postgres/
+          kubectl apply -f k8s-manifests/deployment.yaml
+          kubectl apply -f k8s-manifests/service.yaml
+          kubectl apply -f k8s-manifests/ingress.yaml
+          
+          # Форсируем обновление образа (rollout restart)
+          kubectl rollout restart deployment/django-deployment -n ${{ env.K8S_NAMESPACE }}
