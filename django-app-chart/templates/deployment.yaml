@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "django-app.fullname" . }}
+  name: {{ include "temp.fullname" . }}
   namespace: {{ .Values.global.namespace }}
   labels:
-    {{- include "django-app.labels" . | nindent 4 }}
+    {{- include "temp.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.app.replicas }}
   selector:
     matchLabels:
-      {{- include "django-app.selectorLabels" . | nindent 6 }}
+      {{- include "temp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "django-app.selectorLabels" . | nindent 8 }}
+        {{- include "temp.selectorLabels" . | nindent 8 }}
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8000"
