@@ -1,68 +1,57 @@
-name: Deploy Django App
+name: Deploy Django App (Lab 4)
 
 on:
   push:
     branches: [ main ]
 
 env:
-  REGISTRY: ghcr.io
-  # Приводим имя репозитория к нижнему регистру автоматически нельзя в env, сделаем в шагах
-  K8S_NAMESPACE: django-app
+  # Адрес для пуша с хост-машины (через /etc/hosts)
+  PUSH_REGISTRY: "registry.local:5000"
+  IMAGE_NAME: "django-app"
+  K8S_NAMESPACE: "django-app"
+  HELM_RELEASE: "django-app-prod"
 
 jobs:
-  build-and-deploy:
-    # ВАЖНО: используем ваш self-hosted runner
-    runs-on: self-hosted 
+  build-push-deploy:
+    runs-on: self-hosted # Запуск на вашем Mac
     
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Lowercase repo name
-        run: |
-          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          # Важно для совместимости, если раннер на маке, а кластер где-то еще, но у нас все локально
-          platforms: linux/arm64 
+          # Тегируем для registry.local
+          tags: ${{ env.PUSH_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          # Важно для совместимости с Minikube на M1 (избегает проблем с архитектурой)
+          platforms: linux/arm64
 
-      - name: Deploy to Minikube
+      - name: Deploy with Helm
         run: |
-          # Этот шаг сработает, только если раннер запущен локально и видит minikube
-          kubectl config use-context minikube
-          
-          # Создаем namespace если нет
+          # 1. Создаем namespace если нет
           kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
           
-          # Секреты (См. пояснение ниже - т.к. это CI, секрет должен уже быть или создаваться тут)
-          # В лабе предполагается ручное создание, поэтому пропустим создание секрета в CI
+          # 2. Обновляем зависимости чарта (скачиваем Postgres)
+          helm dependency update ./django-app-chart
+
+          # 3. Деплой / Обновление
+          # Обратите внимание: мы не меняем image.repository здесь, 
+          # так как в values.yaml уже прописан правильный ВНУТРЕННИЙ адрес для K8s.
           
-          # Применяем манифесты
-          kubectl apply -f k8s-manifests/namespace.yaml
-          kubectl apply -f k8s-manifests/configmap.yaml
-          kubectl apply -f k8s-manifests/postgres/
-          kubectl apply -f k8s-manifests/deployment.yaml
-          kubectl apply -f k8s-manifests/service.yaml
-          kubectl apply -f k8s-manifests/ingress.yaml
-          
-          # Форсируем обновление образа (rollout restart)
-          kubectl rollout restart deployment/django-deployment -n ${{ env.K8S_NAMESPACE }}
+          helm upgrade --install ${{ env.HELM_RELEASE }} ./django-app-chart \
+            --namespace ${{ env.K8S_NAMESPACE }} \
+            --set image.tag=latest \
+            --wait --timeout 300s
+
+      - name: Run Migrations
+        run: |
+           # Ищем под по лейблам
+           POD=$(kubectl get pod -n ${{ env.K8S_NAMESPACE }} -l app.kubernetes.io/name=django-app -o jsonpath="{.items[0].metadata.name}")
+           
+           # Запускаем миграции
+           kubectl exec -n ${{ env.K8S_NAMESPACE }} $POD -- python manage.py migrate
