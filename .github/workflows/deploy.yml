@@ -6,7 +6,7 @@ on:
 
 env:
   # Адрес для пуша с хост-машины (через /etc/hosts)
-  PUSH_REGISTRY: "registry.local:5000"
+  PUSH_REGISTRY: "myregistry.local:5000"
   IMAGE_NAME: "django-app"
   K8S_NAMESPACE: "django-app"
   HELM_RELEASE: "django-app-prod"

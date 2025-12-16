@@ -1,0 +1,37 @@
+global:
+  namespace: django-app
+
+image:
+  # Внутренний адрес для Kubernetes
+  repository: "private-registry-docker-registry.registry.svc:5000/django-app"
+  tag: "latest"
+  pullPolicy: Always
+
+app:
+  replicas: 2
+  port: 8000
+  env:
+    DEBUG: "False"
+    ALLOWED_HOSTS: "*"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: django.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+postgresql:
+  enabled: true
+  auth:
+    database: "django_app"
+    username: "django_user"
+    password: "postgres_password_123"
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
+
+monitoring:
+  enabled: true
