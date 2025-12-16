@@ -13,6 +13,6 @@ spec:
       {{- include "temp.selectorLabels" . | nindent 6 }}
   endpoints:
   - port: http
-    path: /metrics
+    path: /prometheus/metrics
     interval: 15s
 {{- end }}
