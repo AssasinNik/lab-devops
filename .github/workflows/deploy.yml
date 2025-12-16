@@ -21,15 +21,21 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push Docker image
+      - name: Build Docker image (load into local Docker)
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
-          # Тегируем для registry.local
+          # Собираем через buildx, но пока НЕ пушим в реестр
+          push: false
+          # Загружаем образ в локальный Docker-демон (как если бы собрали docker build)
+          load: true
+          # Тегируем для registry myregistry.local
           tags: ${{ env.PUSH_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           # Важно для совместимости с Minikube на M1 (избегает проблем с архитектурой)
           platforms: linux/arm64
+
+      - name: Push Docker image to registry
+        run: docker push $PUSH_REGISTRY/$IMAGE_NAME:latest
 
       - name: Deploy with Helm
         run: |
