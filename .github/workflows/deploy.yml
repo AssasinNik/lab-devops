@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 env:
-  # Адрес для пуша с хост-машины (через /etc/hosts)
+  # Локальный реестр, доступный как myregistry.local:5000 (должен быть настроен как insecure registry)
   PUSH_REGISTRY: "myregistry.local:5000"
   IMAGE_NAME: "django-app"
   K8S_NAMESPACE: "django-app"
