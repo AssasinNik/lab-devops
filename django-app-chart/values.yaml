@@ -2,8 +2,9 @@ global:
   namespace: django-app
 
 image:
-  # Внутренний адрес для Kubernetes (короткое имя сервиса, CoreDNS добавит суффиксы автоматически)
-  repository: "private-registry-docker-registry.registry:5000/django-app"
+  # Внутренний адрес для Kubernetes (временно используем IP вместо DNS, чтобы не перезапускать minikube)
+  # IP может измениться при пересоздании сервиса - после перезапуска minikube лучше вернуть DNS-имя
+  repository: "10.97.166.59:5000/django-app"
   tag: "latest"
   pullPolicy: Always
 
