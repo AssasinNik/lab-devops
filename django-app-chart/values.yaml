@@ -2,8 +2,8 @@ global:
   namespace: django-app
 
 image:
-  # Внутренний адрес для Kubernetes (полное DNS‑имя сервиса реестра в namespace registry)
-  repository: "private-registry-docker-registry.registry.svc.cluster.local:5000/django-app"
+  # Внутренний адрес для Kubernetes (короткое имя сервиса, CoreDNS добавит суффиксы автоматически)
+  repository: "private-registry-docker-registry.registry:5000/django-app"
   tag: "latest"
   pullPolicy: Always
 
